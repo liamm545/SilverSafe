@@ -77,7 +77,7 @@ def start_video_and_detect():
     #######firebase Setting#################
     # Environment Setting for using firebase
     cred = credentials.Certificate(
-        "/home/skku/IoT_Project/json/silvercare-84496-firebase-adminsdk-tksu6-bac3439fd8.json"
+        "/home/skku_3/Rasp/IoT_Project/json/silvercare-84496-firebase-adminsdk-tksu6-bac3439fd8.json"
     )
 
     app_name = "myApp"

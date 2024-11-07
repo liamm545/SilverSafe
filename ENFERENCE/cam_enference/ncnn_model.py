@@ -2,7 +2,7 @@ import cv2
 from ultralytics import YOLO
 import time
 
-ncnn_model = YOLO("/home/yeong/RaspberryPI/IoT_Project/model/pose_model_ncnn_model", task="pose")
+ncnn_model = YOLO("/home/skku_3/Rasp/IoT_Project/model/pose_model_ncnn_model", task="pose")
 
 cap = cv2.VideoCapture(0)
 
