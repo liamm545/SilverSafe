@@ -13,6 +13,7 @@ import firebase_admin
 from firebase_admin import credentials, db
 
 import time
+
 # Import YOLOv8 dependencies
 from ultralytics import YOLO
 
@@ -111,7 +112,9 @@ def start_video_and_detect():
 
     # Load the YOLOv8 model
     # model = YOLO('/Users/sangwon_back/Chrome_download/IoT_Project/local_execution/pose_model.pt')
-    ncnn_model = YOLO("/home/skku_3/Rasp/IoT_Project/model/pose_model_ncnn_model", task="pose")
+    ncnn_model = YOLO(
+        "/home/skku_3/Rasp/IoT_Project/model/pose_model_ncnn_model", task="pose"
+    )
 
     # webcam
     cap = cv2.VideoCapture(0)
@@ -151,8 +154,13 @@ def start_video_and_detect():
             labels.append(f"{class_name}: {confidence:.2f}")
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(
-                frame, f"{class_name} ({confidence:.2f})", (x1, y1 - 10),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2
+                frame,
+                f"{class_name} ({confidence:.2f})",
+                (x1, y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                2,
             )
 
         ## Display the frame with detections
