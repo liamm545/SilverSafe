@@ -5,6 +5,7 @@ import os
 import json
 import threading
 import time
+import servo
 
 # Import firebase
 import firebase_admin
@@ -100,55 +101,73 @@ def start_video_and_detect():
     nms_threshold = 0.45
 
     # Load the YOLOv8 model
-    model = YOLO("/home/skku/IoT_Project/model/pose_model.pt")
+    ncnn_model = YOLO(
+        "/home/skku_3/Rasp/IoT_Project/model/pose_model_ncnn_model", task="pose"
+    )
 
     # webcam
     cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FPS, 1)  # Set the frame rate to 1 FPS
+    cap.set(cv2.CAP_PROP_FPS, 60)  # Set the frame rate to 1 FPS
+
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # mp4
+    # cap = cv2.VideoCapture("video/falling_video.mp4")
 
     while True:
-        # Clear buffer by reading a few frames (adjust as needed)
-        for _ in range(5):
-            cap.read()
+        global isfall
+
+        # for _ in range(5):
+        #     cap.read()
 
         ret, frame = cap.read()
         if not ret:
             break
 
-        # Perform object detection using YOLOv8
-        results = model(
-            frame,
-            verbose=False,
-            device="cpu",
-            conf=confidence_threshold,
-            iou=nms_threshold,
-        )
+        cur_height, cur_width, _ = frame.shape
+        center_x = cur_width / 2
+
+        start_time = time.time()
+
+        results = ncnn_model.predict(frame)
+        boxes = results[0].boxes
 
         # Get the detected objects
         detections = results[0].boxes.data
 
-        # Generate labels for the detected objects
         labels = []
-        for detection in detections:
-            class_id = int(detection[5])
-            class_name = model.names[class_id]
-            confidence = float(detection[4])
-            if confidence >= confidence_threshold:
-                x1, y1, x2, y2 = map(int, detection[:4])
-                labels.append(f"{class_name}: {confidence:.2f}")
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(
-                    frame,
-                    f"{class_name}: {confidence:.2f}",
-                    (x1, y1 - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.9,
-                    (0, 255, 0),
-                    2,
-                )
+        for box in boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            cur_center = (x1 + x2) / 2
+            confidence = box.conf[0]
+            class_id = int(box.cls[0])
+            class_name = results[0].names[class_id]
+            labels.append(f"{class_name}: {confidence:.2f}")
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(
+                frame,
+                f"{class_name} ({confidence:.2f})",
+                (x1, y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                2,
+            )
+
+            if abs(cur_center - center_x) > 100:
+                print("Move")
+                tmp_dir = (cur_center / cur_width) * 180
+                threading.Thread(
+                    target=servo.move_motor, args=(tmp_dir,)
+                ).start()  # Left position
 
         # Display the frame with detections
-        cv2.imshow("YOLOv8 Object Detection", frame)
+        # cv2.imshow("YOLOv8 Object Detection", frame)
+
+        # Encode the frame as JPEG to be used in webpage
+        ret, buffer = cv2.imencode(".jpg", frame)
+        frame = buffer.tobytes()
 
         # Update Firebase data in a separate thread
         if labels:
