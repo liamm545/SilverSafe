@@ -1,15 +1,15 @@
-import 'package:best_flutter_ui_templates/ui_view/area_list_view.dart';
-import 'package:best_flutter_ui_templates/ui_view/running_view.dart';
 import 'package:best_flutter_ui_templates/ui_view/title_view.dart';
-import 'package:best_flutter_ui_templates/ui_view/workout_view.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_mjpeg/flutter_mjpeg.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_database/firebase_database.dart';
 import '../fitness_app_theme.dart';
 
 class TrainingScreen extends StatefulWidget {
   const TrainingScreen({Key? key, this.animationController}) : super(key: key);
 
   final AnimationController? animationController;
+
   @override
   _TrainingScreenState createState() => _TrainingScreenState();
 }
@@ -22,12 +22,22 @@ class _TrainingScreenState extends State<TrainingScreen>
   final ScrollController scrollController = ScrollController();
   double topBarOpacity = 0.0;
 
+  String _imageUrl = '';
+  bool _isImageInitialized = false;
+  bool isRunning = true;
+
+  late DatabaseReference databaseRef;
+
   @override
   void initState() {
     topBarAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
             parent: widget.animationController!,
             curve: Interval(0, 0.5, curve: Curves.fastOutSlowIn)));
+
+    databaseRef = FirebaseDatabase.instance.ref();
+
+    _fetchImageUrl();
     addAllListData();
 
     scrollController.addListener(() {
@@ -52,7 +62,31 @@ class _TrainingScreenState extends State<TrainingScreen>
         }
       }
     });
+
     super.initState();
+  }
+
+  Future<void> _fetchImageUrl() async {
+    try {
+      final DataSnapshot snapshot = await databaseRef.child('flask_url').get();
+      if (snapshot.exists) {
+        String flaskUrl = snapshot.value as String;
+
+        final response = await http.get(Uri.parse(flaskUrl));
+        if (response.statusCode == 200) {
+          setState(() {
+            _imageUrl = '$flaskUrl/video_feed';
+            _isImageInitialized = true;
+          });
+        } else {
+          print('Failed to load image URL: ${response.statusCode}');
+        }
+      } else {
+        print('No URL found in the database');
+      }
+    } catch (e) {
+      print('Error fetching image URL: $e');
+    }
   }
 
   void addAllListData() {
@@ -61,62 +95,69 @@ class _TrainingScreenState extends State<TrainingScreen>
     listViews.add(
       TitleView(
         titleTxt: 'Streaming',
-        subTxt: 'Details',
         animation: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
             parent: widget.animationController!,
             curve:
-                Interval((1 / count) * 0, 1.0, curve: Curves.fastOutSlowIn))),
+            Interval((1 / count) * 0, 1.0, curve: Curves.fastOutSlowIn))),
         animationController: widget.animationController!,
       ),
     );
 
     listViews.add(
-      WorkoutView(
-        animation: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-            parent: widget.animationController!,
-            curve:
-                Interval((1 / count) * 2, 1.0, curve: Curves.fastOutSlowIn))),
-        animationController: widget.animationController!,
-      ),
-    );
-    listViews.add(
-      RunningView(
-        animation: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-            parent: widget.animationController!,
-            curve:
-                Interval((1 / count) * 3, 1.0, curve: Curves.fastOutSlowIn))),
-        animationController: widget.animationController!,
-      ),
-    );
-
-    listViews.add(
-      TitleView(
-        titleTxt: 'Area of focus',
-        subTxt: 'more',
-        animation: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-            parent: widget.animationController!,
-            curve:
-                Interval((1 / count) * 4, 1.0, curve: Curves.fastOutSlowIn))),
-        animationController: widget.animationController!,
-      ),
-    );
-
-    listViews.add(
-      AreaListView(
-        mainScreenAnimation: Tween<double>(begin: 0.0, end: 1.0).animate(
-            CurvedAnimation(
+      AnimatedBuilder(
+        animation: widget.animationController!,
+        builder: (BuildContext context, Widget? child) {
+          return FadeTransition(
+            opacity: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
                 parent: widget.animationController!,
-                curve: Interval((1 / count) * 5, 1.0,
-                    curve: Curves.fastOutSlowIn))),
-        mainScreenAnimationController: widget.animationController!,
+                curve: Interval((1 / count) * 2, 1.0, curve: Curves.fastOutSlowIn))),
+            child: Transform(
+              transform: Matrix4.translationValues(
+                  0.0, 30 * (1.0 - widget.animationController!.value), 0.0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16.0),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                          color: Colors.grey.withOpacity(0.4),
+                          offset: const Offset(1.1, 1.1),
+                          blurRadius: 10.0),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16.0),
+                    child: _isImageInitialized
+                        ? Mjpeg(
+                      isLive: isRunning,
+                      error: (context, error, stack) {
+                        print(error);
+                        print(stack);
+                        return Text(error.toString(),
+                            style: TextStyle(color: Colors.red));
+                      },
+                      stream: _imageUrl,
+                    )
+                        : Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
+
   }
 
   Future<bool> getData() async {
     await Future<dynamic>.delayed(const Duration(milliseconds: 50));
     return true;
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +260,6 @@ class _TrainingScreenState extends State<TrainingScreen>
                                 ),
                               ),
                             ),
-
                             Padding(
                               padding: const EdgeInsets.only(
                                 left: 8,
@@ -249,7 +289,6 @@ class _TrainingScreenState extends State<TrainingScreen>
                                 ],
                               ),
                             ),
-
                           ],
                         ),
                       )

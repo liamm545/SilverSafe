@@ -65,11 +65,6 @@ class TitleView extends StatelessWidget {
                             SizedBox(
                               height: 38,
                               width: 26,
-                              child: Icon(
-                                Icons.arrow_forward,
-                                color: FitnessAppTheme.darkText,
-                                size: 18,
-                              ),
                             ),
                           ],
                         ),

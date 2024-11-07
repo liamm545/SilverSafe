@@ -5,6 +5,8 @@ import 'package:best_flutter_ui_templates/ui_view/title_view.dart';
 import 'package:best_flutter_ui_templates/fitness_app_theme.dart';
 import 'package:best_flutter_ui_templates/my_diary/water_view.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_database/firebase_database.dart';
 
 class MyDiaryScreen extends StatefulWidget {
   const MyDiaryScreen({Key? key, this.animationController}) : super(key: key);
@@ -21,6 +23,9 @@ class _MyDiaryScreenState extends State<MyDiaryScreen>
   List<Widget> listViews = <Widget>[];
   final ScrollController scrollController = ScrollController();
   double topBarOpacity = 0.0;
+  late DatabaseReference databaseRef;
+  String _imageUrl = '';
+  bool _isImageInitialized = false;
 
   @override
   void initState() {
@@ -28,7 +33,10 @@ class _MyDiaryScreenState extends State<MyDiaryScreen>
         CurvedAnimation(
             parent: widget.animationController!,
             curve: Interval(0, 0.5, curve: Curves.fastOutSlowIn)));
+
+    databaseRef = FirebaseDatabase.instance.ref();
     addAllListData();
+    _fetchImageUrl();
 
     scrollController.addListener(() {
       if (scrollController.offset >= 24) {
@@ -55,17 +63,42 @@ class _MyDiaryScreenState extends State<MyDiaryScreen>
     super.initState();
   }
 
+  Future<void> _fetchImageUrl() async {
+    try {
+      final DataSnapshot snapshot = await databaseRef.child('flask_url').get();
+      if (snapshot.exists) {
+        String flaskUrl = snapshot.value as String;
+
+        final response = await http.get(Uri.parse(flaskUrl));
+        if (response.statusCode == 200) {
+          setState(() {
+            _imageUrl = '$flaskUrl/video_feed';
+            _isImageInitialized = true;
+          });
+          // if (_isImageInitialized) {
+          //   await http.get(Uri.parse(_imageUrl));
+          // }
+        } else {
+          print('Failed to load image URL: ${response.statusCode}');
+        }
+      } else {
+        print('No URL found in the database');
+      }
+    } catch (e) {
+      print('Error fetching image URL: $e');
+    }
+  }
+
   void addAllListData() {
     const int count = 9;
 
     listViews.add(
       TitleView(
         titleTxt: '자세 기록',
-        subTxt: 'Details',
         animation: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
             parent: widget.animationController!,
             curve:
-                Interval((1 / count) * 0, 1.0, curve: Curves.fastOutSlowIn))),
+            Interval((1 / count) * 0, 1.0, curve: Curves.fastOutSlowIn))),
         animationController: widget.animationController!,
       ),
     );
@@ -74,19 +107,18 @@ class _MyDiaryScreenState extends State<MyDiaryScreen>
         animation: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
             parent: widget.animationController!,
             curve:
-                Interval((1 / count) * 1, 1.0, curve: Curves.fastOutSlowIn))),
+            Interval((1 / count) * 1, 1.0, curve: Curves.fastOutSlowIn))),
         animationController: widget.animationController!,
       ),
     );
 
     listViews.add(
       TitleView(
-        titleTxt: 'Body measurement',
-        subTxt: 'Today',
+        titleTxt: '건강 기록',
         animation: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
             parent: widget.animationController!,
             curve:
-                Interval((1 / count) * 4, 1.0, curve: Curves.fastOutSlowIn))),
+            Interval((1 / count) * 4, 1.0, curve: Curves.fastOutSlowIn))),
         animationController: widget.animationController!,
       ),
     );
@@ -96,18 +128,17 @@ class _MyDiaryScreenState extends State<MyDiaryScreen>
         animation: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
             parent: widget.animationController!,
             curve:
-                Interval((1 / count) * 5, 1.0, curve: Curves.fastOutSlowIn))),
+            Interval((1 / count) * 5, 1.0, curve: Curves.fastOutSlowIn))),
         animationController: widget.animationController!,
       ),
     );
     listViews.add(
       TitleView(
         titleTxt: '건강 점수',
-        subTxt: 'Aqua SmartBottle',
         animation: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
             parent: widget.animationController!,
             curve:
-                Interval((1 / count) * 6, 1.0, curve: Curves.fastOutSlowIn))),
+            Interval((1 / count) * 6, 1.0, curve: Curves.fastOutSlowIn))),
         animationController: widget.animationController!,
       ),
     );
@@ -121,15 +152,6 @@ class _MyDiaryScreenState extends State<MyDiaryScreen>
                     curve: Curves.fastOutSlowIn))),
         mainScreenAnimationController: widget.animationController!,
       ),
-    );
-    listViews.add(
-      GlassView(
-          animation: Tween<double>(begin: 0.0, end: 1.0).animate(
-              CurvedAnimation(
-                  parent: widget.animationController!,
-                  curve: Interval((1 / count) * 8, 1.0,
-                      curve: Curves.fastOutSlowIn))),
-          animationController: widget.animationController!),
     );
   }
 
