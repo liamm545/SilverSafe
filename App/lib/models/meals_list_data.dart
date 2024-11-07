@@ -17,36 +17,28 @@ class MealsListData {
 
   static List<MealsListData> tabIconsList = <MealsListData>[
     MealsListData(
-      imagePath: 'assets/fitness_app/breakfast.png',
-      titleTxt: 'Breakfast',
-      kacl: 525,
-      meals: <String>['Bread,', 'Peanut butter,', 'Apple'],
+      imagePath: 'assets/fitness_app/key.png',
+      titleTxt: '계정',
+      // kacl: 525,
+      meals: <String>['계정 정보'],
       startColor: '#FA7D82',
       endColor: '#FFB295',
     ),
     MealsListData(
-      imagePath: 'assets/fitness_app/lunch.png',
-      titleTxt: 'Lunch',
-      kacl: 602,
-      meals: <String>['Salmon,', 'Mixed veggies,', 'Avocado'],
+      imagePath: 'assets/fitness_app/question.png',
+      titleTxt: '문의하기',
+      // kacl: 602,
+      meals: <String>['궁금하신 걸','물어보세요'],
       startColor: '#738AE6',
       endColor: '#5C5EDD',
     ),
     MealsListData(
-      imagePath: 'assets/fitness_app/snack.png',
-      titleTxt: 'Snack',
-      kacl: 0,
-      meals: <String>['Recommend:', '800 kcal'],
+      imagePath: 'assets/fitness_app/info.png',
+      titleTxt: '도움말',
+      // kacl: 0,
+      meals: <String>['앱에 관한 정보'],
       startColor: '#FE95B6',
       endColor: '#FF5287',
-    ),
-    MealsListData(
-      imagePath: 'assets/fitness_app/dinner.png',
-      titleTxt: 'Dinner',
-      kacl: 0,
-      meals: <String>['Recommend:', '703 kcal'],
-      startColor: '#6F72CA',
-      endColor: '#1E1466',
     ),
   ];
 }
