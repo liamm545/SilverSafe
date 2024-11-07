@@ -5,6 +5,7 @@ import os
 import json
 import threading
 import time
+import servo
 
 # Import firebase
 import firebase_admin
@@ -124,6 +125,9 @@ def start_video_and_detect():
         if not ret:
             break
 
+        cur_height, cur_width, _ = frame.shape
+        center_x = cur_width / 2
+
         start_time = time.time()
 
         results = ncnn_model.predict(frame)
@@ -135,6 +139,7 @@ def start_video_and_detect():
         labels = []
         for box in boxes:
             x1, y1, x2, y2 = map(int, box.xyxy[0])
+            cur_center = (x1 + x2) / 2
             confidence = box.conf[0]
             class_id = int(box.cls[0])
             class_name = results[0].names[class_id]
@@ -149,6 +154,14 @@ def start_video_and_detect():
                 (0, 255, 0),
                 2,
             )
+
+            if abs(cur_center - center_x) > 100:
+                print("Move")
+                tmp_dir = (cur_center / cur_width) * 180
+                threading.Thread(
+                    target=servo.move_motor, args=(tmp_dir,)
+                ).start()  # Left position
+
         # Display the frame with detections
         # cv2.imshow("YOLOv8 Object Detection", frame)
 
