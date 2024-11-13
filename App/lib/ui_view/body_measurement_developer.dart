@@ -40,7 +40,7 @@ class BodyMeasurementView extends StatelessWidget {
                   height: 150, // 높이만 설정해 빈 박스를 유지합니다.
                   child: Center(
                     child: Text(
-                      '황영석 : hhyun3032@g.skku.edu\n백상원 : sy0303b@naver.com\n이태호 : dlxogh0630@gmail.com',
+                      '황영석 : hhyun3032@g.skku.edu\n백상원 : sy0303b@naver.com\n이태호 : dlxogh0630@gmail.com\n선재원 : mosang17@gmail.com\n정재헌 : jhj98113@naver.com',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: FitnessAppTheme.fontName,

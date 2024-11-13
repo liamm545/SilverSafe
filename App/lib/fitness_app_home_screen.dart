@@ -127,17 +127,18 @@ class _FitnessAppHomeScreenState extends State<FitnessAppHomeScreen>
                       InformationScreen(animationController: animationController);
                 });
               });
-            } else if (index == 1){ //재생
-              animationController?.reverse().then<dynamic>((data) {
-                if (!mounted) {
-                  return;
-                }
-                setState(() {
-                  tabBody =
-                      TrainingScreen(animationController: animationController);
-                });
-              });
             }
+            // else if (index == 1){ //재생
+            //   animationController?.reverse().then<dynamic>((data) {
+            //     if (!mounted) {
+            //       return;
+            //     }
+            //     setState(() {
+            //       tabBody =
+            //           TrainingScreen(animationController: animationController);
+            //     });
+            //   });
+            // }
           },
         ),
       ],
