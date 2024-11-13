@@ -8,12 +8,10 @@ YOLOv8 객체 탐지를 웹 애플리케이션과 Firebase에 통합, 노약자�
 ## Features
 - 실시간 객체 탐지: YOLOv8을 사용하여 비디오 스트림에서 실시간으로 객체 및 활동을 탐지
 - Firebase 통합: 탐지된 활동을 기반으로 Firebase 실시간 데이터베이스를 업데이트
-- 웹 인터페이스: 탐지된 활동과 함께 비디오 스트림을 웹 브라우저에 표시
 - 활동 모니터링: 낙상, 점프, 앉기, 서기, 걷기 등의 특정 활동을 탐지
 
 ## Prerequisites
 - Python 3.8 이상
-- Flask
 - OpenCV
 - Firebase Admin SDK
 - Ultralytics YOLOv8
