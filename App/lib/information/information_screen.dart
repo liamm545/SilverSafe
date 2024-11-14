@@ -237,7 +237,7 @@ class _InformationScreenState extends State<InformationScreen>
                                     ),
                                   ),
                                   Text(
-                                    '1 August',
+                                    '21 November',
                                     textAlign: TextAlign.left,
                                     style: TextStyle(
                                       fontFamily: FitnessAppTheme.fontName,

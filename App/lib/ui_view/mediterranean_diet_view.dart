@@ -228,7 +228,7 @@ class _MediterranesnDietViewState extends State<MediterranesnDietView> with Tick
                                                   const EdgeInsets.only(
                                                       left: 4, bottom: 3),
                                                   child: Text(
-                                                    '보유 질환',
+                                                    '보유 질환 : 당뇨병',
                                                     textAlign: TextAlign.center,
                                                     style: TextStyle(
                                                       fontFamily:
@@ -255,7 +255,7 @@ class _MediterranesnDietViewState extends State<MediterranesnDietView> with Tick
                                                   const EdgeInsets.only(
                                                       left: 4, bottom: 3),
                                                   child: Text(
-                                                    '유의점',
+                                                    '유의점 : ---',
                                                     textAlign: TextAlign.center,
                                                     style: TextStyle(
                                                       fontFamily:
@@ -475,7 +475,7 @@ class _MediterranesnDietViewState extends State<MediterranesnDietView> with Tick
                     ),
                     Padding(
                       padding: const EdgeInsets.only(
-                          left: 24, right: 24, top: 8, bottom: 16),
+                          left: 60, right: 30, top: 8, bottom: 16),
                       child: Row(
                         children: <Widget>[
                           Expanded(
@@ -551,7 +551,7 @@ class _MediterranesnDietViewState extends State<MediterranesnDietView> with Tick
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     Text(
-                                      'Walking',
+                                      'Standing',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontFamily: FitnessAppTheme.fontName,
@@ -611,76 +611,76 @@ class _MediterranesnDietViewState extends State<MediterranesnDietView> with Tick
                               ],
                             ),
                           ),
-                          Expanded(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: <Widget>[
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(
-                                      'Jumping',
-                                      style: TextStyle(
-                                        fontFamily: FitnessAppTheme.fontName,
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 16,
-                                        letterSpacing: -0.2,
-                                        color: FitnessAppTheme.darkText,
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          right: 0, top: 4),
-                                      child: Container(
-                                        height: 4,
-                                        width: 70,
-                                        decoration: BoxDecoration(
-                                          color: HexColor('#F1B440')
-                                              .withOpacity(0.2),
-                                          borderRadius: BorderRadius.all(
-                                              Radius.circular(4.0)),
-                                        ),
-                                        child: Row(
-                                          children: <Widget>[
-                                            Container(
-                                              width: ((70*(jumpingCount/30)) * animation!.value),
-                                              height: 4,
-                                              decoration: BoxDecoration(
-                                                gradient:
-                                                LinearGradient(colors: [
-                                                  HexColor('#F1B440')
-                                                      .withOpacity(0.1),
-                                                  HexColor('#F1B440'),
-                                                ]),
-                                                borderRadius: BorderRadius.all(
-                                                    Radius.circular(4.0)),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 6),
-                                      child: Text(
-                                        '${(jumpingCount * animation!.value).toInt()}회',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontFamily: FitnessAppTheme.fontName,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                          color: FitnessAppTheme.grey
-                                              .withOpacity(0.5),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          )
+                          // Expanded(
+                          //   child: Row(
+                          //     mainAxisAlignment: MainAxisAlignment.end,
+                          //     crossAxisAlignment: CrossAxisAlignment.center,
+                          //     children: <Widget>[
+                          //       Column(
+                          //         mainAxisAlignment: MainAxisAlignment.center,
+                          //         crossAxisAlignment: CrossAxisAlignment.start,
+                          //         children: <Widget>[
+                          //           Text(
+                          //             'Jumping',
+                          //             style: TextStyle(
+                          //               fontFamily: FitnessAppTheme.fontName,
+                          //               fontWeight: FontWeight.w500,
+                          //               fontSize: 16,
+                          //               letterSpacing: -0.2,
+                          //               color: FitnessAppTheme.darkText,
+                          //             ),
+                          //           ),
+                          //           Padding(
+                          //             padding: const EdgeInsets.only(
+                          //                 right: 0, top: 4),
+                          //             child: Container(
+                          //               height: 4,
+                          //               width: 70,
+                          //               decoration: BoxDecoration(
+                          //                 color: HexColor('#F1B440')
+                          //                     .withOpacity(0.2),
+                          //                 borderRadius: BorderRadius.all(
+                          //                     Radius.circular(4.0)),
+                          //               ),
+                          //               child: Row(
+                          //                 children: <Widget>[
+                          //                   Container(
+                          //                     width: ((70*(jumpingCount/30)) * animation!.value),
+                          //                     height: 4,
+                          //                     decoration: BoxDecoration(
+                          //                       gradient:
+                          //                       LinearGradient(colors: [
+                          //                         HexColor('#F1B440')
+                          //                             .withOpacity(0.1),
+                          //                         HexColor('#F1B440'),
+                          //                       ]),
+                          //                       borderRadius: BorderRadius.all(
+                          //                           Radius.circular(4.0)),
+                          //                     ),
+                          //                   ),
+                          //                 ],
+                          //               ),
+                          //             ),
+                          //           ),
+                          //           Padding(
+                          //             padding: const EdgeInsets.only(top: 6),
+                          //             child: Text(
+                          //               '${(jumpingCount * animation!.value).toInt()}회',
+                          //               textAlign: TextAlign.center,
+                          //               style: TextStyle(
+                          //                 fontFamily: FitnessAppTheme.fontName,
+                          //                 fontWeight: FontWeight.w600,
+                          //                 fontSize: 12,
+                          //                 color: FitnessAppTheme.grey
+                          //                     .withOpacity(0.5),
+                          //               ),
+                          //             ),
+                          //           ),
+                          //         ],
+                          //       ),
+                          //     ],
+                          //   ),
+                          // )
                         ],
                       ),
                     )
