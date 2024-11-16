@@ -28,4 +28,4 @@ def set_motor():
     servo.detach()
 
 
-set_motor()
+

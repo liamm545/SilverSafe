@@ -6,6 +6,7 @@ import json
 import threading
 import time
 import servo
+import audio_monitor
 
 # Import firebase
 import firebase_admin
@@ -14,6 +15,25 @@ from firebase_admin import credentials, db
 # Import YOLOv8 dependencies
 from ultralytics import YOLO
 
+# State variable for loud sound detection
+# State of positions
+isfall = False
+issitting = False
+iswalking = False
+isstanding = False
+isjump = False
+loud_detected = False
+
+# Function to monitor microphone input in a separate thread
+def monitor_audio_input():
+    global loud_detected
+    while True:
+        if audio_monitor.get_microphone_input():
+            loud_detected = True
+            print("데시벨 30 이상 감지!")
+        else:
+            loud_detected = False
+        time.sleep(0.1)  # 너무 빠른 감지 방지를 위해 짧은 대기 시간 추가
 
 # Function to convert OpenCV image to base64 string
 def image_to_base64(img):
@@ -21,14 +41,6 @@ def image_to_base64(img):
     img_bytes = buffer.tobytes()
     img_b64 = b64encode(img_bytes).decode("utf-8")
     return img_b64
-
-
-# State of positions
-isfall = False
-issitting = False
-iswalking = False
-isstanding = False
-isjump = False
 
 
 # Firebase update function
@@ -74,11 +86,9 @@ def update_firebase(ref, labels):
 
 # Function to start the video stream and perform object detection
 def start_video_and_detect():
-
-    #######firebase Setting#################
-    # Environment Setting for using firebase
+    ####### Firebase Setting #################
     cred = credentials.Certificate(
-        "/home/skku_3/Rasp/IoT_Project/json/silvercare-84496-firebase-adminsdk-tksu6-bac3439fd8.json"
+        "/home/skku/SilverSafe/json/silvercare-84496-firebase-adminsdk-tksu6-bac3439fd8.json"
     )
 
     app_name = "myApp"
@@ -92,34 +102,24 @@ def start_video_and_detect():
     else:
         cur_app = firebase_admin.get_app(app_name)
 
-    # Reference to the database
     ref = db.reference("/", cur_app)
     #######################################
 
-    # Set confidence threshold and NMS threshold
     confidence_threshold = 0.5
     nms_threshold = 0.45
 
-    # Load the YOLOv8 model
     ncnn_model = YOLO(
-        "/home/skku_3/Rasp/IoT_Project/model/pose_model_ncnn_model", task="pose"
+        "/home/skku/SilverSafe/model/pose_model_ncnn_model", task="pose"
     )
 
-    # webcam
     cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FPS, 60)  # Set the frame rate to 1 FPS
+    cap.set(cv2.CAP_PROP_FPS, 60)
 
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    # mp4
-    # cap = cv2.VideoCapture("video/falling_video.mp4")
-
     while True:
-        global isfall
-
-        # for _ in range(5):
-        #     cap.read()
+        global isfall, loud_detected
 
         ret, frame = cap.read()
         if not ret:
@@ -128,13 +128,8 @@ def start_video_and_detect():
         cur_height, cur_width, _ = frame.shape
         center_x = cur_width / 2
 
-        start_time = time.time()
-
         results = ncnn_model.predict(frame)
         boxes = results[0].boxes
-
-        # Get the detected objects
-        detections = results[0].boxes.data
 
         labels = []
         for box in boxes:
@@ -160,36 +155,42 @@ def start_video_and_detect():
                 tmp_dir = (cur_center / cur_width) * 180
                 threading.Thread(
                     target=servo.move_motor, args=(tmp_dir,)
-                ).start()  # Left position
+                ).start()
 
-        # Display the frame with detections
-        # cv2.imshow("YOLOv8 Object Detection", frame)
+        cv2.imshow("YOLOv8 Object Detection", frame)
 
-        # Encode the frame as JPEG to be used in webpage
+        # Check if loud sound was detected
+        if loud_detected:
+            print("데시벨 30 이상 감지!")
+
         ret, buffer = cv2.imencode(".jpg", frame)
         frame = buffer.tobytes()
 
-        # Update Firebase data in a separate thread
         if labels:
             threading.Thread(target=update_firebase, args=(ref, labels)).start()
-        # Check for key presses
+
         key = cv2.waitKey(1) & 0xFF
-        if key == ord("q"):  # Press 'q' to quit
+        if key == ord("q"):
             break
-        elif key == ord("c"):  # Press 'c' to capture and save the image
+        elif key == ord("c"):
             filename = "_".join(labels) + ".jpg"
-            filename = filename.replace(":", "_")  # Replace colons with underscores
-            filename = filename.replace(" ", "_")  # Replace spaces with underscores
+            filename = filename.replace(":", "_")
+            filename = filename.replace(" ", "_")
             cv2.imwrite(filename, frame)
-        # time.sleep(delay)
-    # Release the capture and close windows
+
     cap.release()
     cv2.destroyAllWindows()
 
 
 # Main function
 def main():
-    # Start the video stream and perform object detection
+    servo.set_motor()
+
+    # Start audio monitoring thread
+    audio_thread = threading.Thread(target=monitor_audio_input, daemon=True)
+    audio_thread.start()
+
+    # Start video detection
     start_video_and_detect()
 
 
