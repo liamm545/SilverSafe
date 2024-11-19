@@ -51,13 +51,30 @@ asound.snd_lib_error_set_handler(
     c_error_handler
 )  # Suppress ALSA error messages globally
 
+# JACK error suppression setup
+JACK_ERROR_HANDLER_FUNC = CFUNCTYPE(None)
+
+
+def py_jack_error_handler():
+    pass  # Suppress JACK error messages
+
+
+jack_c_error_handler = JACK_ERROR_HANDLER_FUNC(py_jack_error_handler)
+
+# Load JACK library
+try:
+    jack = cdll.LoadLibrary("libjack.so.0")
+    jack.jack_set_error_function(jack_c_error_handler)
+except OSError:
+    print("JACK library not found. Continuing without JACK error suppression.")
+
 
 def monitor_audio_input():
     while True:
         if audio_monitor.get_microphone_input():
             state["loud_detected"] = True
             state["last_loud_detected"] = time.time()  # Record current time
-            print("데시벨 30 이상 감지!")
+            print("## Upper 30db ##")
         else:
             state["loud_detected"] = False
         time.sleep(0.1)
@@ -163,7 +180,7 @@ def start_video_detection():
 
         # Handle loud sound detection
         if state["loud_detected"]:
-            print("데시벨 30 이상 감지!")
+            print("## Upper 30db ##")
 
         # Capture frame on key press
         key = cv2.waitKey(1) & 0xFF
