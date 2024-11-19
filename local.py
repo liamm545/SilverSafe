@@ -7,6 +7,7 @@ import threading
 import time
 import servo
 import audio_monitor
+from ctypes import *
 
 # Firebase imports
 import firebase_admin
@@ -33,6 +34,22 @@ state = {
     "loud_detected": False,
     "last_loud_detected": 0,  # Timestamp of the last loud sound
 }
+
+# ALSA error suppression setup
+ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+
+
+def py_error_handler(filename, line, function, err, fmt):
+    pass  # Suppress ALSA error messages
+
+
+c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
+
+# Load ALSA library
+asound = cdll.LoadLibrary("libasound.so")
+asound.snd_lib_error_set_handler(
+    c_error_handler
+)  # Suppress ALSA error messages globally
 
 
 def monitor_audio_input():
