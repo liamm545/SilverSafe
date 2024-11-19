@@ -22,7 +22,7 @@ FIREBASE_DB_URL = "https://silvercare-84496-default-rtdb.firebaseio.com/"
 YOLO_MODEL_PATH = "/home/skku/SilverSafe/model/pose_model_ncnn_model"
 CONFIDENCE_THRESHOLD = 0.8
 VIDEO_FPS = 60
-CENTER_OFFSET_THRESHOLD = 100
+CENTER_OFFSET_THRESHOLD = 50  # Threshold for detecting offset from center
 
 # Global state
 state = {
@@ -74,7 +74,7 @@ def monitor_audio_input():
         if audio_monitor.get_microphone_input():
             state["loud_detected"] = True
             state["last_loud_detected"] = time.time()  # Record current time
-            print("## Upper 30db ##")
+            print("Sound level above 30 dB detected!")
         else:
             state["loud_detected"] = False
         time.sleep(0.1)
@@ -141,19 +141,19 @@ def process_frame(frame, model, ref):
             2,
         )
 
-        # Servo motor adjustment
-        if abs(cur_center - center_x) > CENTER_OFFSET_THRESHOLD:
-            print("Move servo motor")
-            angle = (cur_center / frame_width) * 180
-            threading.Thread(target=servo.move_motor, args=(angle,)).start()
-
-        # Check if falling is detected within 5 seconds of loud sound
-        if (
-            class_name == "fall"
-            and confidence >= CONFIDENCE_THRESHOLD
-            and current_time - state["last_loud_detected"] <= 5
-        ):
-            print("Danger detected!")
+        # Adjust servo motor if the person is not centered
+        offset = cur_center - center_x
+        if abs(offset) > CENTER_OFFSET_THRESHOLD:
+            current_angle = servo.get_current_angle()
+            adjustment = offset / center_x * 30  # Adjust angle proportionally
+            target_angle = current_angle + adjustment
+            target_angle = max(
+                servo.MIN_ANGLE, min(servo.MAX_ANGLE, target_angle)
+            )  # Clamp to valid range
+            print(
+                f"Person detected off-center. Adjusting servo: {current_angle}° -> {target_angle}°"
+            )
+            threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
 
     # Update Firebase with detected labels
     if labels:
@@ -180,7 +180,7 @@ def start_video_detection():
 
         # Handle loud sound detection
         if state["loud_detected"]:
-            print("## Upper 30db ##")
+            print("Sound level above 30 dB detected!")
 
         # Capture frame on key press
         key = cv2.waitKey(1) & 0xFF
@@ -195,8 +195,8 @@ def start_video_detection():
 
 
 if __name__ == "__main__":
-    # Initialize servo motor
-    servo.set_motor()
+    # Initialize servo motor at 90 degrees
+    servo.set_servo_angle(90)
 
     # Start audio monitoring in a separate thread
     threading.Thread(target=monitor_audio_input, daemon=True).start()
