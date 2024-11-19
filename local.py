@@ -31,14 +31,15 @@ state = {
     "standing": False,
     "jump": False,
     "loud_detected": False,
+    "last_loud_detected": 0,  # Timestamp of the last loud sound
 }
 
 
 def monitor_audio_input():
-    """Monitor microphone input for loud sounds in a separate thread."""
     while True:
         if audio_monitor.get_microphone_input():
             state["loud_detected"] = True
+            state["last_loud_detected"] = time.time()  # Record current time
             print("데시벨 30 이상 감지!")
         else:
             state["loud_detected"] = False
@@ -46,13 +47,11 @@ def monitor_audio_input():
 
 
 def image_to_base64(img):
-    """Convert OpenCV image to base64 string."""
     _, buffer = cv2.imencode(".jpg", img)
     return b64encode(buffer.tobytes()).decode("utf-8")
 
 
 def initialize_firebase():
-    """Initialize Firebase and return a database reference."""
     cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
     app_name = "myApp"
 
@@ -67,7 +66,6 @@ def initialize_firebase():
 
 
 def update_firebase(ref, detected_labels):
-    """Update Firebase database with detected labels."""
     for label in detected_labels:
         label_name, confidence = label.split(": ")
         confidence = float(confidence)
@@ -83,11 +81,11 @@ def update_firebase(ref, detected_labels):
 
 
 def process_frame(frame, model, ref):
-    """Process a single frame for object detection and update Firebase."""
     results = model.predict(frame)
     labels = []
     frame_height, frame_width, _ = frame.shape
     center_x = frame_width / 2
+    current_time = time.time()
 
     for box in results[0].boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -115,6 +113,14 @@ def process_frame(frame, model, ref):
             angle = (cur_center / frame_width) * 180
             threading.Thread(target=servo.move_motor, args=(angle,)).start()
 
+        # Check if falling is detected within 5 seconds of loud sound
+        if (
+            class_name == "fall"
+            and confidence >= CONFIDENCE_THRESHOLD
+            and current_time - state["last_loud_detected"] <= 5
+        ):
+            print("Danger detected!")
+
     # Update Firebase with detected labels
     if labels:
         threading.Thread(target=update_firebase, args=(ref, labels)).start()
@@ -123,7 +129,6 @@ def process_frame(frame, model, ref):
 
 
 def start_video_detection():
-    """Start video capture and detection."""
     ref = initialize_firebase()
     model = YOLO(YOLO_MODEL_PATH, task="pose")
     cap = cv2.VideoCapture(0)
