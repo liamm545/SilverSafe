@@ -155,6 +155,14 @@ def process_frame(frame, model, ref):
             )
             threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
 
+        # Check if falling is detected within 5 seconds of loud sound
+        if (
+            class_name == "fall"
+            and confidence >= CONFIDENCE_THRESHOLD
+            and current_time - state["last_loud_detected"] <= 5
+        ):
+            print("Danger detected!")
+
     # Update Firebase with detected labels
     if labels:
         threading.Thread(target=update_firebase, args=(ref, labels)).start()
