@@ -21,7 +21,7 @@ def set_servo_angle(angle):
 
     # Convert angle to servo position (-1 to 1)
     position = -1 + (angle * 2 / 180)
-    print(f"Setting angle to {angle}° (position {position})")
+    #print(f"Setting angle to {angle}° (position {position})")
     servo.value = position
 
     # Update current angle
@@ -31,7 +31,8 @@ def set_servo_angle(angle):
 
 def move_motor(target_angle):
     set_servo_angle(target_angle)
-    print(f"Moved motor to {target_angle}°")
+    #print(f"Moved motor to {target_angle}°")
+    sleep(2)
 
 
 def get_current_angle():
