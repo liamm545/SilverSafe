@@ -116,7 +116,7 @@ def update_firebase(ref, detected_labels):
                     if(current_time - state["last_sitting_time"] <= 3): # sitting detected within 3 sec
                         print("sleep")
                     else:
-                        if(current_time - state["last_loud_detected"] <= 5): # loud sound detected within 5 sec
+                        if((state["loud_detected"] == True) and (current_time - state["last_loud_detected"] <= 5)): # loud sound detected within 5 sec
                             print("Warning: loud sound O")
                             ref.update({"danger" : True})
                         else:
