@@ -111,12 +111,17 @@ def update_firebase(ref, detected_labels):
                 if(label_name == "sitting"):
                     state["last_sitting_time"] = current_time
                 elif(label_name == "fall"):
-                    if(
-                        current_time - state["last_loud_detected"] <= 5 # loud sound detected within 5 sec
-                        and current_time - state["last_sitting_time"] <= 3 # sitting pose detected within 3 sec 
-                    ):
-                        ref.update({"danger" : True})
-                    
+                    print("last_sitting_time : ", state["last_sitting_time"])
+                    print("current time: ", current_time)
+                    if(current_time - state["last_sitting_time"] <= 3): # sitting detected within 3 sec
+                        print("sleep")
+                    else:
+                        if(current_time - state["last_loud_detected"] <= 5): # loud sound detected within 5 sec
+                            print("Warning: loud sound O")
+                            ref.update({"danger" : True})
+                        else:
+                            print("Caution: lound sound X")
+                        
                 #state[label_name] = True
         else:
             if state.get(label_name, False):
@@ -153,16 +158,16 @@ def process_frame(frame, model, ref):
 
         # Adjust servo motor if the person is not centered
         offset = cur_center - center_x
-        if abs(offset) > CENTER_OFFSET_THRESHOLD:
+        if abs(offset) > CENTER_OFFSET_THRESHOLD and labels:
             current_angle = servo.get_current_angle()
             adjustment = offset / center_x * 30  # Adjust angle proportionally
             target_angle = current_angle + adjustment
             target_angle = max(
                 servo.MIN_ANGLE, min(servo.MAX_ANGLE, target_angle)
             )  # Clamp to valid range
-            print(
-                f"Person detected off-center. Adjusting servo: {current_angle}° -> {target_angle}°"
-            )
+            # print(
+            #     f"Person detected off-center. Adjusting servo: {current_angle}° -> {target_angle}°"
+            # )
             threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
 
         # # Check if falling is detected within 5 seconds of loud sound
@@ -197,8 +202,8 @@ def start_video_detection():
         cv2.imshow("YOLOv8 Object Detection", frame)
 
         # Handle loud sound detection
-        if state["loud_detected"]:
-            print("Sound level above 30 dB detected!")
+        # if state["loud_detected"]:
+        #     print("Sound level above 30 dB detected!")
 
         # Capture frame on key press
         key = cv2.waitKey(1) & 0xFF
@@ -214,7 +219,7 @@ def start_video_detection():
 
 if __name__ == "__main__":
     # Initialize servo motor at 90 degrees
-    servo.set_servo_angle(90)
+    # servo.set_servo_angle(90)
 
     # Start audio monitoring in a separate thread
     threading.Thread(target=monitor_audio_input, daemon=True).start()
