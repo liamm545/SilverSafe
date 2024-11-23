@@ -17,9 +17,11 @@ from firebase_admin import credentials, db
 from ultralytics import YOLO
 
 # Global constants
-FIREBASE_CREDENTIALS_PATH = "/home/skku/SilverSafe/json/silvercare-84496-firebase-adminsdk-tksu6-bac3439fd8.json"
+FIREBASE_CREDENTIALS_PATH = (
+    "./json/silvercare-84496-firebase-adminsdk-tksu6-bac3439fd8.json"
+)
 FIREBASE_DB_URL = "https://silvercare-84496-default-rtdb.firebaseio.com/"
-YOLO_MODEL_PATH = "/home/skku/SilverSafe/model/pose_model_ncnn_model"
+YOLO_MODEL_PATH = "./model/pose_model_ncnn_model"
 CONFIDENCE_THRESHOLD = 0.8
 VIDEO_FPS = 60
 CENTER_OFFSET_THRESHOLD = 50  # Threshold for detecting offset from center
@@ -31,9 +33,9 @@ state = {
     # "walking": False,
     # "standing": False,
     # "jump": False,
-    "is_sleep" : False,
-    "last_sitting_time" : 0,
-    "last_warning_time" : 0,
+    "is_sleep": False,
+    "last_sitting_time": 0,
+    "last_warning_time": 0,
     "loud_detected": False,
     "last_loud_detected": 0,  # Timestamp of the last loud sound
 }
@@ -108,35 +110,40 @@ def update_firebase(ref, detected_labels):
         confidence = float(confidence)
         current_time = time.time()
 
-        
         if confidence >= CONFIDENCE_THRESHOLD:
             if not state.get(label_name, False):
                 ref.update({label_name: True})
-                if(label_name == "sitting"):
+                if label_name == "sitting":
                     state["last_sitting_time"] = current_time
-                elif(label_name == "fall"):
-                    if(state["is_sleep"]): continue # stop detecting when sleeping
-                    if(current_time - state["last_warning_time"] < 5) : continue # stop detecting for 5 sec after warning detected
+                elif label_name == "fall":
+                    if state["is_sleep"]:
+                        continue  # stop detecting when sleeping
+                    if current_time - state["last_warning_time"] < 5:
+                        continue  # stop detecting for 5 sec after warning detected
                     print("last_sitting_time : ", state["last_sitting_time"])
                     print("current time: ", current_time)
-                    if(current_time - state["last_sitting_time"] <= 3): # sitting detected within 3 sec
+                    if (
+                        current_time - state["last_sitting_time"] <= 3
+                    ):  # sitting detected within 3 sec
                         print("sleep")
                         state["is_sleep"] = True
                     else:
-                        if((state["loud_detected"] == True) and (current_time - state["last_loud_detected"] <= 5)): # loud sound detected within 5 sec
+                        if (state["loud_detected"] == True) and (
+                            current_time - state["last_loud_detected"] <= 5
+                        ):  # loud sound detected within 5 sec
                             print("Warning: loud sound O")
-                            ref.update({"danger" : True})
+                            ref.update({"danger": True})
                             state["last_warning_time"] = time.time()
-                            ref.update({"danger" : False})
+                            ref.update({"danger": False})
                         else:
                             print("Caution: lound sound X")
-                elif(label_name == "standing" and state["is_sleep"] == True):
-                        state["is_sleep"] = False    
-                #state[label_name] = True
+                elif label_name == "standing" and state["is_sleep"] == True:
+                    state["is_sleep"] = False
+                # state[label_name] = True
         else:
             if state.get(label_name, False):
                 ref.update({label_name: False})
-                #state[label_name] = False
+                # state[label_name] = False
 
 
 def process_frame(frame, model, ref):
@@ -144,7 +151,7 @@ def process_frame(frame, model, ref):
     labels = []
     frame_height, frame_width, _ = frame.shape
     center_x = frame_width / 2
-    #current_time = time.time()
+    # current_time = time.time()
 
     for box in results[0].boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -167,26 +174,16 @@ def process_frame(frame, model, ref):
         )
 
         # Adjust servo motor if the person is not centered
-        offset = cur_center - center_x
-        if abs(offset) > CENTER_OFFSET_THRESHOLD and labels:
+        offset_ratio = (cur_center - center_x) / center_x
+        if abs(offset_ratio) > CENTER_OFFSET_THRESHOLD:
             current_angle = servo.get_current_angle()
-            adjustment = offset / center_x * 30  # Adjust angle proportionally
-            target_angle = current_angle + adjustment
+            adjustment = offset_ratio * 15
             target_angle = max(
-                servo.MIN_ANGLE, min(servo.MAX_ANGLE, target_angle)
-            )  # Clamp to valid range
-            # print(
-            #     f"Person detected off-center. Adjusting servo: {current_angle}° -> {target_angle}°"
-            # )
-            threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
-
-        # # Check if falling is detected within 5 seconds of loud sound
-        # if (
-        #     class_name == "fall"
-        #     and confidence >= CONFIDENCE_THRESHOLD
-        #     and current_time - state["last_loud_detected"] <= 5
-        # ):
-        #     print("Danger detected!")
+                servo.MIN_ANGLE, min(servo.MAX_ANGLE, current_angle + adjustment)
+            )
+            threading.Thread(
+                target=servo.move_motor_smoothly, args=(int(target_angle),)
+            ).start()
 
     # Update Firebase with detected labels
     if labels:
