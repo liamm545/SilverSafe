@@ -1,6 +1,7 @@
 import 'package:best_flutter_ui_templates/models/tabIcon_data.dart';
 import 'package:best_flutter_ui_templates/training/training_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'bottom_navigation_view/bottom_bar_view.dart';
 import 'fitness_app_theme.dart';
 import 'my_diary/my_diary_screen.dart';
@@ -41,15 +42,15 @@ class FitnessAppHomeScreen extends StatefulWidget {
 class _FitnessAppHomeScreenState extends State<FitnessAppHomeScreen>
     with TickerProviderStateMixin {
   AnimationController? animationController;
-
+  late FlutterLocalNotificationsPlugin localNotifications;
   List<TabIconData> tabIconsList = TabIconData.tabIconsList;
-
   Widget tabBody = Container(
     color: FitnessAppTheme.background,
   );
 
   @override
   void initState() {
+    super.initState();
     tabIconsList.forEach((TabIconData tab) {
       tab.isSelected = false;
     });
@@ -58,7 +59,9 @@ class _FitnessAppHomeScreenState extends State<FitnessAppHomeScreen>
     animationController = AnimationController(
         duration: const Duration(milliseconds: 600), vsync: this);
     tabBody = MyDiaryScreen(animationController: animationController);
-    super.initState();
+
+    _initializeNotifications(); // Local notifications 초기화
+    _subscribeToFirebaseDatabase(); // Firebase 데이터베이스 구독
   }
 
   @override
@@ -117,7 +120,7 @@ class _FitnessAppHomeScreenState extends State<FitnessAppHomeScreen>
                       MyDiaryScreen(animationController: animationController);
                 });
               });
-            } else if (index == 3) { //개인정보
+            } else if (index == 3) { // 개인정보
               animationController?.reverse().then<dynamic>((data) {
                 if (!mounted) {
                   return;
@@ -128,20 +131,56 @@ class _FitnessAppHomeScreenState extends State<FitnessAppHomeScreen>
                 });
               });
             }
-            // else if (index == 1){ //재생
-            //   animationController?.reverse().then<dynamic>((data) {
-            //     if (!mounted) {
-            //       return;
-            //     }
-            //     setState(() {
-            //       tabBody =
-            //           TrainingScreen(animationController: animationController);
-            //     });
-            //   });
-            // }
           },
         ),
       ],
+    );
+  }
+
+  // Local notifications 초기화
+  void _initializeNotifications() {
+    localNotifications = FlutterLocalNotificationsPlugin();
+
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initializationSettings = InitializationSettings(
+      android: androidSettings,
+    );
+
+    localNotifications.initialize(initializationSettings);
+  }
+
+  // Firebase 데이터베이스에서 danger 값을 구독
+  void _subscribeToFirebaseDatabase() {
+    final databaseReference = FirebaseDatabase.instance.ref('danger');
+
+    databaseReference.onValue.listen((event) {
+      final dangerValue = event.snapshot.value as bool?;
+
+      if (dangerValue == true) {
+        _showNotification(); // danger 값이 true일 때 알림 표시
+      }
+    });
+  }
+
+  // 푸쉬 알림 표시
+  Future<void> _showNotification() async {
+    const androidDetails = AndroidNotificationDetails(
+      'danger_channel', // 채널 ID
+      'Danger Notifications', // 채널 이름
+      channelDescription: 'Notifications for danger alerts',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+    );
+
+    await localNotifications.show(
+      0, // 알림 ID
+      'Danger Alert', // 알림 제목
+      'Danger Detected! Please Check', // 알림 내용
+      notificationDetails,
     );
   }
 }

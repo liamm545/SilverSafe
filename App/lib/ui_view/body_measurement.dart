@@ -96,7 +96,7 @@ class _BodyMeasurementViewState extends State<BodyMeasurementView> with TickerPr
             _updateLog('standing');
           } else if (key == 'danger') {
             _updateLog('Danger detected!');
-            _showNotification(); // Show push notification
+            // _showNotification(); // Show push notification
           }
         }
       }
