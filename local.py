@@ -105,6 +105,8 @@ def update_firebase(ref, detected_labels):
         label_name, confidence = label.split(": ")
         confidence = float(confidence)
         current_time = time.time()
+
+        
         if confidence >= CONFIDENCE_THRESHOLD:
             if not state.get(label_name, False):
                 ref.update({label_name: True})
@@ -119,6 +121,10 @@ def update_firebase(ref, detected_labels):
                         if((state["loud_detected"] == True) and (current_time - state["last_loud_detected"] <= 5)): # loud sound detected within 5 sec
                             print("Warning: loud sound O")
                             ref.update({"danger" : True})
+
+
+                            #Fix necessary
+                            ref.update({"danger" : False})
                         else:
                             print("Caution: lound sound X")
                         

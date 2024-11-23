@@ -6,7 +6,7 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 DEVICE_INDEX = -1  # Use default PulseAudio device
-THRESHOLD_DB = 30  # Decibel threshold
+THRESHOLD_DB = 35  # Decibel threshold
 
 
 def calculate_decibel(data):
