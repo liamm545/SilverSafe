@@ -26,11 +26,12 @@ CENTER_OFFSET_THRESHOLD = 50  # Threshold for detecting offset from center
 
 # Global state
 state = {
-    "fall": False,
-    "sitting": False,
-    "walking": False,
-    "standing": False,
-    "jump": False,
+    # "fall": False,
+    # "sitting": False,
+    # "walking": False,
+    # "standing": False,
+    # "jump": False,
+    "last_sitting_time" : 0,
     "loud_detected": False,
     "last_loud_detected": 0,  # Timestamp of the last loud sound
 }
@@ -103,15 +104,24 @@ def update_firebase(ref, detected_labels):
     for label in detected_labels:
         label_name, confidence = label.split(": ")
         confidence = float(confidence)
-
+        current_time = time.time()
         if confidence >= CONFIDENCE_THRESHOLD:
             if not state.get(label_name, False):
                 ref.update({label_name: True})
-                state[label_name] = True
+                if(label_name == "sitting"):
+                    state["last_sitting_time"] = current_time
+                elif(label_name == "fall"):
+                    if(
+                        current_time - state["last_loud_detected"] <= 5 # loud sound detected within 5 sec
+                        and current_time - state["last_sitting_time"] <= 3 # sitting pose detected within 3 sec 
+                    ):
+                        ref.update({"danger" : True})
+                    
+                #state[label_name] = True
         else:
             if state.get(label_name, False):
                 ref.update({label_name: False})
-                state[label_name] = False
+                #state[label_name] = False
 
 
 def process_frame(frame, model, ref):
@@ -119,7 +129,7 @@ def process_frame(frame, model, ref):
     labels = []
     frame_height, frame_width, _ = frame.shape
     center_x = frame_width / 2
-    current_time = time.time()
+    #current_time = time.time()
 
     for box in results[0].boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -155,13 +165,13 @@ def process_frame(frame, model, ref):
             )
             threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
 
-        # Check if falling is detected within 5 seconds of loud sound
-        if (
-            class_name == "fall"
-            and confidence >= CONFIDENCE_THRESHOLD
-            and current_time - state["last_loud_detected"] <= 5
-        ):
-            print("Danger detected!")
+        # # Check if falling is detected within 5 seconds of loud sound
+        # if (
+        #     class_name == "fall"
+        #     and confidence >= CONFIDENCE_THRESHOLD
+        #     and current_time - state["last_loud_detected"] <= 5
+        # ):
+        #     print("Danger detected!")
 
     # Update Firebase with detected labels
     if labels:
