@@ -5,10 +5,11 @@ import os
 import json
 import threading
 import time
-import servo
+#import servo
+import servo_TH
 import audio_monitor
 from ctypes import *
-
+from servo_TH import ServoMotor
 # Firebase imports
 import firebase_admin
 from firebase_admin import credentials, db
@@ -37,6 +38,9 @@ state = {
     "loud_detected": False,
     "last_loud_detected": 0,  # Timestamp of the last loud sound
 }
+
+#servo object를 globally 설정
+servo = None
 
 # ALSA error suppression setup
 ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
@@ -142,7 +146,7 @@ def update_firebase(ref, detected_labels):
 def process_frame(frame, model, ref):
     results = model.predict(frame)
     labels = []
-    frame_height, frame_width, _ = frame.shape
+    frame_height, frame_width, _ = frame.shape # frame width = 640? 
     center_x = frame_width / 2
     #current_time = time.time()
 
@@ -166,19 +170,26 @@ def process_frame(frame, model, ref):
             2,
         )
 
+        
+        if(results[0].boxes.size() != 1): continue # if multi label is detected, ignore it 
         # Adjust servo motor if the person is not centered
         offset = cur_center - center_x
-        if abs(offset) > CENTER_OFFSET_THRESHOLD and labels:
-            current_angle = servo.get_current_angle()
-            adjustment = offset / center_x * 30  # Adjust angle proportionally
-            target_angle = current_angle + adjustment
-            target_angle = max(
-                servo.MIN_ANGLE, min(servo.MAX_ANGLE, target_angle)
-            )  # Clamp to valid range
+        if abs(offset) > CENTER_OFFSET_THRESHOLD:
+            if(offset > 0):
+                servo.move_angle(1) # 1도 만큼 이동
+            else:
+                servo.move_angle(-1) # -1 도 만큼 이동
+            # current_angle = servo.get_current_angle()
+            # adjustment = offset / center_x * 30  # Adjust angle proportionally
+            # target_angle = current_angle + adjustment
+            # target_angle = max(
+            #     servo.MIN_ANGLE, min(servo.MAX_ANGLE, target_angle)
+            # )
+            # Clamp to valid range
             # print(
             #     f"Person detected off-center. Adjusting servo: {current_angle}° -> {target_angle}°"
             # )
-            threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
+            #threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
 
         # # Check if falling is detected within 5 seconds of loud sound
         # if (
@@ -200,7 +211,8 @@ def start_video_detection():
     model = YOLO(YOLO_MODEL_PATH, task="pose")
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FPS, VIDEO_FPS)
-
+    servo = ServoMotor() # 서보모터 객체 생성
+    servo.set_servo()
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
