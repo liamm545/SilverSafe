@@ -31,6 +31,7 @@ state = {
     # "walking": False,
     # "standing": False,
     # "jump": False,
+    "is_sleep" : False,
     "last_sitting_time" : 0,
     "last_warning_time" : 0,
     "loud_detected": False,
@@ -114,11 +115,13 @@ def update_firebase(ref, detected_labels):
                 if(label_name == "sitting"):
                     state["last_sitting_time"] = current_time
                 elif(label_name == "fall"):
+                    if(state["is_sleep"]): continue # stop detecting when sleeping
                     if(current_time - state["last_warning_time"] < 5) : continue # stop detecting for 5 sec after warning detected
                     print("last_sitting_time : ", state["last_sitting_time"])
                     print("current time: ", current_time)
                     if(current_time - state["last_sitting_time"] <= 3): # sitting detected within 3 sec
                         print("sleep")
+                        state["is_sleep"] = True
                     else:
                         if((state["loud_detected"] == True) and (current_time - state["last_loud_detected"] <= 5)): # loud sound detected within 5 sec
                             print("Warning: loud sound O")
@@ -127,7 +130,8 @@ def update_firebase(ref, detected_labels):
                             ref.update({"danger" : False})
                         else:
                             print("Caution: lound sound X")
-                        
+                elif(label_name == "standing" and state["is_sleep"] == True):
+                        state["is_sleep"] = False    
                 #state[label_name] = True
         else:
             if state.get(label_name, False):
