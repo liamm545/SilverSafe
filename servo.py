@@ -30,9 +30,19 @@ def set_servo_angle(angle):
 
 
 def move_motor(target_angle):
+    global current_angle
+
+    target_angle = max(MIN_ANGLE, min(MAX_ANGLE, target_angle))
+    step = 1 if target_angle > current_angle else -1
+
+    for angle in range(current_angle, target_angle + step, step):
+        set_servo_angle(angle)
+        sleep(0.02)
+
     set_servo_angle(target_angle)
-    #print(f"Moved motor to {target_angle}°")
-    sleep(2)
+    current_angle = target_angle
+
+    sleep(0.5)
 
 
 def get_current_angle():

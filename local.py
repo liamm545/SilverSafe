@@ -17,12 +17,12 @@ from firebase_admin import credentials, db
 from ultralytics import YOLO
 
 # Global constants
-FIREBASE_CREDENTIALS_PATH = "/home/skku/SilverSafe/json/silvercare-84496-firebase-adminsdk-tksu6-bac3439fd8.json"
+FIREBASE_CREDENTIALS_PATH = "/home/skku_3/Rasp/SilverSafe/json/silvercare-84496-firebase-adminsdk-tksu6-bac3439fd8.json"
 FIREBASE_DB_URL = "https://silvercare-84496-default-rtdb.firebaseio.com/"
-YOLO_MODEL_PATH = "/home/skku/SilverSafe/model/pose_model_ncnn_model"
+YOLO_MODEL_PATH = "/home/skku_3/Rasp/SilverSafe/model/pose_model_ncnn_model"
 CONFIDENCE_THRESHOLD = 0.8
 VIDEO_FPS = 60
-CENTER_OFFSET_THRESHOLD = 50  # Threshold for detecting offset from center
+CENTER_OFFSET_THRESHOLD = 100  # Threshold for detecting offset from center
 
 # Global state
 state = {
@@ -168,17 +168,16 @@ def process_frame(frame, model, ref):
 
         # Adjust servo motor if the person is not centered
         offset = cur_center - center_x
-        if abs(offset) > CENTER_OFFSET_THRESHOLD and labels:
+        if abs(offset) > CENTER_OFFSET_THRESHOLD:
             current_angle = servo.get_current_angle()
-            adjustment = offset / center_x * 30  # Adjust angle proportionally
-            target_angle = current_angle + adjustment
+            adjustment = offset / center_x * 15
             target_angle = max(
-                servo.MIN_ANGLE, min(servo.MAX_ANGLE, target_angle)
-            )  # Clamp to valid range
-            # print(
-            #     f"Person detected off-center. Adjusting servo: {current_angle}° -> {target_angle}°"
-            # )
-            threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
+                servo.MIN_ANGLE, min(servo.MAX_ANGLE, current_angle + adjustment)
+            )
+            # print("@@@@@@@@@@@@@@@", target_angle)
+            threading.Thread(
+                target=servo.move_motor, args=(int(target_angle),)
+            ).start()
 
         # # Check if falling is detected within 5 seconds of loud sound
         # if (
