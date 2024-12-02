@@ -166,27 +166,14 @@ def process_frame(frame, model, ref):
             2,
         )
 
-        # Adjust servo motor if the person is not centered
         offset = cur_center - center_x
-        if abs(offset) > CENTER_OFFSET_THRESHOLD and labels:
+        if abs(offset) > CENTER_OFFSET_THRESHOLD:  # CENTER_OFFSET_THRESHOLD는 허용 오차
             current_angle = servo.get_current_angle()
-            adjustment = offset / center_x * 30  # Adjust angle proportionally
+            adjustment = (offset / center_x) * 30  # 오프셋 비례 각도 조정
             target_angle = current_angle + adjustment
-            target_angle = max(
-                servo.MIN_ANGLE, min(servo.MAX_ANGLE, target_angle)
-            )  # Clamp to valid range
-            # print(
-            #     f"Person detected off-center. Adjusting servo: {current_angle}° -> {target_angle}°"
-            # )
+            target_angle = max(servo.MIN_ANGLE, min(servo.MAX_ANGLE, target_angle))
+            print(f"Adjusting servo: {current_angle}° -> {target_angle}°")
             threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
-
-        # # Check if falling is detected within 5 seconds of loud sound
-        # if (
-        #     class_name == "fall"
-        #     and confidence >= CONFIDENCE_THRESHOLD
-        #     and current_time - state["last_loud_detected"] <= 5
-        # ):
-        #     print("Danger detected!")
 
     # Update Firebase with detected labels
     if labels:
