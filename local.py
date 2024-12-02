@@ -23,6 +23,9 @@ YOLO_MODEL_PATH = "/home/skku/SilverSafe/model/pose_model_ncnn_model"
 CONFIDENCE_THRESHOLD = 0.8
 VIDEO_FPS = 60
 CENTER_OFFSET_THRESHOLD = 50  # Threshold for detecting offset from center
+SERVO_PIN = 12
+
+servo_motor = servo.ServoMotor(servo_pin=SERVO_PIN)
 
 # Global state
 state = {
@@ -167,13 +170,13 @@ def process_frame(frame, model, ref):
         )
 
         offset = cur_center - center_x
-        if abs(offset) > CENTER_OFFSET_THRESHOLD:  # CENTER_OFFSET_THRESHOLD는 허용 오차
-            current_angle = servo.get_current_angle()
+        if abs(offset) > CENTER_OFFSET_THRESHOLD:
+            current_angle = servo_motor.get_current_angle()  # servo -> servo_motor
             adjustment = (offset / center_x) * 30  # 오프셋 비례 각도 조정
             target_angle = current_angle + adjustment
-            target_angle = max(servo.MIN_ANGLE, min(servo.MAX_ANGLE, target_angle))
+            target_angle = max(servo_motor.MIN_ANGLE, min(servo_motor.MAX_ANGLE, target_angle))
             print(f"Adjusting servo: {current_angle}° -> {target_angle}°")
-            threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
+            threading.Thread(target=servo_motor.move_motor, args=(target_angle,)).start()
 
     # Update Firebase with detected labels
     if labels:
@@ -215,11 +218,16 @@ def start_video_detection():
 
 
 if __name__ == "__main__":
-    # Initialize servo motor at 90 degrees
-    # servo.set_servo_angle(90)
+    try:
+        # Initialize servo motor at 90 degrees
+        servo_motor.move_motor(90)
 
-    # Start audio monitoring in a separate thread
-    threading.Thread(target=monitor_audio_input, daemon=True).start()
+        # Start audio monitoring in a separate thread
+        threading.Thread(target=monitor_audio_input, daemon=True).start()
 
-    # Start video detection
-    start_video_detection()
+        # Start video detection
+        start_video_detection()
+
+    finally:
+        # 프로그램 종료 시 Servo 정지 및 GPIO 정리
+        servo_motor.stop()
