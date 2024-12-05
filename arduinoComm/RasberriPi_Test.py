@@ -2,7 +2,7 @@ import serial
 import time
 
 # 아두이노와 연결된 포트 설정 (예: /dev/ttyUSB0 또는 /dev/ttyACM0)
-arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600, timeout=1)
+arduino = serial.Serial(port='/dev/ttyHI', baudrate=9600, timeout=None)
 
 def send_angle(angle):
     """각도를 아두이노로 전송"""

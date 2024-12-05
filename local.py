@@ -47,11 +47,14 @@ arduino = serial.Serial(port='/dev/ttyHI', baudrate=9600, timeout=None)
 cur_angle = 90
 def change_angle(angle):
     """각도를 아두이노로 전송"""
+    print("inside change_angle\n")
     global cur_angle
     new_angle = cur_angle + angle
     if 0 <= new_angle <= 180:
         cur_angle = new_angle
-        arduino.write(f"{cur_angle}\n".encode())  # 각도를 문자열로 변환 후 전송
+        print(f"new_angle {new_angle}\n")
+
+        arduino.write(f"{new_angle}\n".encode())  # 각도를 문자열로 변환 후 전송
         time.sleep(0.1)  # 약간의 대기 시간
 
 # ALSA error suppression setup
@@ -186,12 +189,14 @@ def process_frame(frame, model, ref):
         # if(results[0].boxes.size() != 1): continue # if multi label is detected, ignore it 
         # Adjust servo motor if the person is not centered
         offset = cur_center - center_x
+        print(f"offset: {offset}\n")
         if abs(offset) > CENTER_OFFSET_THRESHOLD:
+            print("move motor")
             if(offset > 0):
-                change_angle(5)
+                change_angle(-5)
                 #servo.move_angle(1) # 1도 만큼 이동
             else:
-                change_angle(-5)
+                change_angle(5)
                 #servo.move_angle(-1) # -1 도 만큼 이동
             # current_angle = servo.get_current_angle()
             # adjustment = offset / center_x * 30  # Adjust angle proportionally
