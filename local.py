@@ -20,10 +20,10 @@ import time
 from ultralytics import YOLO
 
 # Global constants
-FIREBASE_CREDENTIALS_PATH = "/home/skku/SilverSafe/json/silvercare-84496-firebase-adminsdk-tksu6-bac3439fd8.json"
+FIREBASE_CREDENTIALS_PATH = "/home/skku/Silversafe/json/silvercare-84496-firebase-adminsdk-tksu6-bac3439fd8.json"
 FIREBASE_DB_URL = "https://silvercare-84496-default-rtdb.firebaseio.com/"
-YOLO_MODEL_PATH = "/home/skku/SilverSafe/model/pose_model_ncnn_model"
-CONFIDENCE_THRESHOLD = 0.8
+YOLO_MODEL_PATH = "/home/skku/Silversafe/model/pose_model_ncnn_model"
+CONFIDENCE_THRESHOLD = 0.5
 VIDEO_FPS = 60
 CENTER_OFFSET_THRESHOLD = 200  # Threshold for detecting offset from center
 
@@ -42,7 +42,7 @@ state = {
 }
 
 # 아두이노와 연결된 포트 설정 (예: /dev/ttyUSB0 또는 /dev/ttyACM0)
-arduino = serial.Serial(port='/dev/ttyUSB0', baudrate=9600, timeout=1)
+arduino = serial.Serial(port='/dev/ttyHI', baudrate=9600, timeout=None)
 
 cur_angle = 90
 def change_angle(angle):
@@ -183,7 +183,7 @@ def process_frame(frame, model, ref):
         )
 
         
-        if(results[0].boxes.size() != 1): continue # if multi label is detected, ignore it 
+        # if(results[0].boxes.size() != 1): continue # if multi label is detected, ignore it 
         # Adjust servo motor if the person is not centered
         offset = cur_center - center_x
         if abs(offset) > CENTER_OFFSET_THRESHOLD:
