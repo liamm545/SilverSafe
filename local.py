@@ -29,11 +29,6 @@ CENTER_OFFSET_THRESHOLD = 200  # Threshold for detecting offset from center
 
 # Global state
 state = {
-    # "fall": False,
-    # "sitting": False,
-    # "walking": False,
-    # "standing": False,
-    # "jump": False,
     "is_sleep" : False,
     "last_sitting_time" : 0,
     "last_warning_time" : 0,
@@ -151,11 +146,9 @@ def update_firebase(ref, detected_labels):
                             print("Caution: lound sound X")
                 elif(label_name == "standing" and state["is_sleep"] == True):
                         state["is_sleep"] = False    
-                #state[label_name] = True
         else:
             if state.get(label_name, False):
                 ref.update({label_name: False})
-                #state[label_name] = False
 
 
 def process_frame(frame, model, ref):
@@ -163,7 +156,6 @@ def process_frame(frame, model, ref):
     labels = []
     frame_height, frame_width, _ = frame.shape # frame width = 640? 
     center_x = frame_width / 2
-    #current_time = time.time()
 
     for box in results[0].boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -184,9 +176,6 @@ def process_frame(frame, model, ref):
             (0, 255, 0),
             2,
         )
-
-        
-        # if(results[0].boxes.size() != 1): continue # if multi label is detected, ignore it 
         # Adjust servo motor if the person is not centered
         offset = cur_center - center_x
         print(f"offset: {offset}\n")
@@ -197,27 +186,6 @@ def process_frame(frame, model, ref):
                 #servo.move_angle(1) # 1도 만큼 이동
             else:
                 change_angle(5)
-                #servo.move_angle(-1) # -1 도 만큼 이동
-            # current_angle = servo.get_current_angle()
-            # adjustment = offset / center_x * 30  # Adjust angle proportionally
-            # target_angle = current_angle + adjustment
-            # target_angle = max(
-            #     servo.MIN_ANGLE, min(servo.MAX_ANGLE, target_angle)
-            # )
-            # Clamp to valid range
-            # print(
-            #     f"Person detected off-center. Adjusting servo: {current_angle}° -> {target_angle}°"
-            # )
-            #threading.Thread(target=servo.move_motor, args=(target_angle,)).start()
-
-        # # Check if falling is detected within 5 seconds of loud sound
-        # if (
-        #     class_name == "fall"
-        #     and confidence >= CONFIDENCE_THRESHOLD
-        #     and current_time - state["last_loud_detected"] <= 5
-        # ):
-        #     print("Danger detected!")
-
     # Update Firebase with detected labels
     if labels:
         threading.Thread(target=update_firebase, args=(ref, labels)).start()
@@ -240,10 +208,6 @@ def start_video_detection():
         # Display frame
         cv2.imshow("YOLOv8 Object Detection", frame)
 
-        # Handle loud sound detection
-        # if state["loud_detected"]:
-        #     print("Sound level above 30 dB detected!")
-
         # Capture frame on key press
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):
@@ -257,8 +221,8 @@ def start_video_detection():
 
 
 if __name__ == "__main__":
-    # Initialize servo motor at 90 degrees
-    # servo.set_servo_angle(90)
+    # Initialize servo motor at 90 degrees. offset angle = 90
+    change_angle(0)
 
     # Start audio monitoring in a separate thread
     threading.Thread(target=monitor_audio_input, daemon=True).start()
