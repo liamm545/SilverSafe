@@ -6,13 +6,15 @@ import json
 import threading
 import time
 #import servo
-import servo_TH
+#import servo_TH
 import audio_monitor
 from ctypes import *
-from servo_TH import ServoMotor
+#from servo_TH import ServoMotor
 # Firebase imports
 import firebase_admin
 from firebase_admin import credentials, db
+import serial
+import time
 
 # YOLOv8 import
 from ultralytics import YOLO
@@ -23,7 +25,7 @@ FIREBASE_DB_URL = "https://silvercare-84496-default-rtdb.firebaseio.com/"
 YOLO_MODEL_PATH = "/home/skku/SilverSafe/model/pose_model_ncnn_model"
 CONFIDENCE_THRESHOLD = 0.8
 VIDEO_FPS = 60
-CENTER_OFFSET_THRESHOLD = 50  # Threshold for detecting offset from center
+CENTER_OFFSET_THRESHOLD = 200  # Threshold for detecting offset from center
 
 # Global state
 state = {
@@ -39,8 +41,18 @@ state = {
     "last_loud_detected": 0,  # Timestamp of the last loud sound
 }
 
-#servo object를 globally 설정
-servo = None
+# 아두이노와 연결된 포트 설정 (예: /dev/ttyUSB0 또는 /dev/ttyACM0)
+arduino = serial.Serial(port='/dev/ttyUSB0', baudrate=9600, timeout=1)
+
+cur_angle = 90
+def change_angle(angle):
+    """각도를 아두이노로 전송"""
+    global cur_angle
+    new_angle = cur_angle + angle
+    if 0 <= new_angle <= 180:
+        cur_angle = new_angle
+        arduino.write(f"{cur_angle}\n".encode())  # 각도를 문자열로 변환 후 전송
+        time.sleep(0.1)  # 약간의 대기 시간
 
 # ALSA error suppression setup
 ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
@@ -176,9 +188,11 @@ def process_frame(frame, model, ref):
         offset = cur_center - center_x
         if abs(offset) > CENTER_OFFSET_THRESHOLD:
             if(offset > 0):
-                servo.move_angle(1) # 1도 만큼 이동
+                change_angle(5)
+                #servo.move_angle(1) # 1도 만큼 이동
             else:
-                servo.move_angle(-1) # -1 도 만큼 이동
+                change_angle(-5)
+                #servo.move_angle(-1) # -1 도 만큼 이동
             # current_angle = servo.get_current_angle()
             # adjustment = offset / center_x * 30  # Adjust angle proportionally
             # target_angle = current_angle + adjustment
@@ -211,8 +225,6 @@ def start_video_detection():
     model = YOLO(YOLO_MODEL_PATH, task="pose")
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FPS, VIDEO_FPS)
-    servo = ServoMotor() # 서보모터 객체 생성
-    servo.set_servo()
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
